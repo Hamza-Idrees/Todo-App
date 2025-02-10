@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  todo-app:
+    build: .
+    container_name: todo-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - todo-mongo
+      - todo-redis
+    environment:
+      - PORT=3000
+      - MONGO_URI=${MONGO_URI}   
+      - REDIS_HOST=todo-redis   
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY}
+      - TOKEN_EXPIRATION=${TOKEN_EXPIRATION}
+    env_file:
+      - .env  
+
+  todo-mongo:
+    image: mongo:6
+    container_name: todo-mongo
+    ports:
+      - "27017:27017"
+
+  todo-redis:
+    image: redis:alpine
+    container_name: todo-redis
+    ports:
+      - "6379:6379"
