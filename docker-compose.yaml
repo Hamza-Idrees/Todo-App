@@ -36,7 +36,7 @@ services:
       - todo-network
     restart: always
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      test: ["CMD", "mongo", "--eval", "db.runCommand({ ping: 1 }).ok"]
       interval: 10s
       timeout: 5s
       retries: 5

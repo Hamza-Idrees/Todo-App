@@ -56,6 +56,9 @@ jobs:
             echo "🐳 Checking Docker..."
             sudo systemctl restart docker
   
+            # Add user to Docker group (if permission denied)
+            sudo usermod -aG docker $USER || true
+  
             # Pull latest code
             echo "🔄 Pulling latest changes..."
             git reset --hard
@@ -71,15 +74,15 @@ jobs:
             TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}
             EOT
   
-            # Build and run with Docker Compose
+            # Ensure Docker Compose is running
             echo "🚀 Running Docker Compose..."
             docker-compose down
             docker-compose up --build -d
   
-            # Wait for Redis to be ready
-            echo "⏳ Waiting for Redis to start..."
-            sleep 10
-            docker-compose logs todo-redis  # Check Redis logs
+            # Wait for services to be healthy
+            echo "⏳ Waiting for services to start..."
+            sleep 15  # Give time for Mongo & Redis to be ready
+            docker-compose ps
   
             # Restart the application using PM2
             echo "🚀 Restarting application..."
