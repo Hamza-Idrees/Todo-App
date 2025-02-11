@@ -36,20 +36,23 @@ jobs:
       - name: Cleanup Docker Containers
         run: docker-compose down
 
-      - name: Deploy to EC2
+        - name: Deploy to EC2
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          EC2_PUBLIC_IP: ${{secrets.EC2_PUBLIC_IP}}
-          run: |
-            ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@13.60.44.85 << 'EOF'
-              mkdir -p /var/www/my-app
-              cd /var/www/my-app
-              if [ ! -d ".git" ]; then
-                git clone https://github.com/Hamza-Idrees/Todo-App.git
-              else
-                git pull origin main
-              fi
-              npm install
-              pm2 restart appgit 
-            EOF
+          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$EC2_PUBLIC_IP << 'EOF'
+            mkdir -p /var/www/my-app
+            cd /var/www/my-app
+            if [ ! -d ".git" ]; then
+              git clone -b main https://github.com/Hamza-Idrees/Todo-App.git .
+            else
+              git pull origin main
+            fi
+            npm install
+            pm2 restart app
+          EOF
+      
         
