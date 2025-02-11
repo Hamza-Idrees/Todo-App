@@ -27,63 +27,16 @@ jobs:
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
           echo "TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}" >> .env
 
-      - name: Deploy to EC2
-        env:
-           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-           GITHUB_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+      - name: Setup SSH Keys
         run: |
-          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key.pem
           chmod 600 private_key.pem
-          echo "$GITHUB_DEPLOY_KEY" > github_deploy_key.pem
-          chmod 600 github_deploy_key.pem
-        
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$EC2_PUBLIC_IP << 'EOF'
-            set -e  # Fail fast if any command fails
-        
-            # Ensure correct SSH key for GitHub
-            mkdir -p ~/.ssh
-            mv github_deploy_key.pem ~/.ssh/github_deploy_key.pem
-            chmod 600 ~/.ssh/github_deploy_key.pem
-            eval "$(ssh-agent -s)"
-            ssh-add ~/.ssh/github_deploy_key.pem
-            echo "Host github.com\n\tIdentityFile ~/.ssh/github_deploy_key.pem\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-        
-            # Ensure Node.js & PM2 are installed
-            if ! command -v node &> /dev/null; then
-              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-              sudo apt-get install -y nodejs
-            fi
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
-        
-            # Ensure project directory exists & correct ownership
-            sudo mkdir -p /home/ubuntu/my-app
-            sudo chown -R ubuntu:ubuntu /home/ubuntu/my-app
-        
-            # Clone or pull latest code
+  
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             cd /home/ubuntu/my-app
-            if [ -d ".git" ]; then
-              echo "Repository exists, pulling latest changes..."
-              git reset --hard
-              git pull origin main
-            else
-              echo "Repository does not exist, cloning..."
-              sudo rm -rf /home/ubuntu/my-app
-              git clone git@github.com:Hamza-Idrees/Todo-App.git /home/ubuntu/my-app
-              cd /home/ubuntu/my-app
-            fi
-        
-            # Ensure package.json exists before running npm install
-            if [ ! -f "package.json" ]; then
-              echo "Error: package.json not found! Aborting deployment."
-              exit 1
-            fi
-        
-            # Install dependencies & restart app
+            git pull origin main
             npm install
-            pm2 restart app || pm2 start index.js --name app
+            pm2 restart my-app || pm2 start index.js --name my-app
           EOF
-        
-      
