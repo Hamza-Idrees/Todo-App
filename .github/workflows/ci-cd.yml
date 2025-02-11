@@ -42,47 +42,45 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             echo "🚀 Connecting to EC2..."
-            
+  
             # Ensure project directory exists
             if [ ! -d "/home/ubuntu/my-app" ]; then
               echo "📂 Cloning repository..."
               git clone https://github.com/Hamza-Idrees/Todo-App.git /home/ubuntu/my-app
             fi
-
+  
             # Navigate to project directory
             cd /home/ubuntu/my-app
-
-            # Ensure Node.js & PM2 are installed
-            if ! command -v node &> /dev/null; then
-              echo "📦 Installing Node.js..."
-              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-              sudo apt-get install -y nodejs
-            fi
-
-            if ! command -v pm2 &> /dev/null; then
-              echo "📦 Installing PM2..."
-              npm install -g pm2
-            fi
-
+  
+            # Ensure Docker is running
+            echo "🐳 Checking Docker..."
+            sudo systemctl restart docker
+  
             # Pull latest code
             echo "🔄 Pulling latest changes..."
             git reset --hard
             git pull origin master  # Ensure this matches your default branch
-
+  
             # ✅ Ensure .env file is created properly
             echo "🔑 Creating .env file..."
             cat <<EOT > .env
             MONGO_URI=${{ secrets.MONGO_URI }}
-            REDIS_URL=redis://todo-redis:6379
+            REDIS_HOST=todo-redis
+            REDIS_PORT=6379
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}
             EOT
-
+  
             # Build and run with Docker Compose
             echo "🚀 Running Docker Compose..."
             docker-compose down
             docker-compose up --build -d
-
+  
+            # Wait for Redis to be ready
+            echo "⏳ Waiting for Redis to start..."
+            sleep 10
+            docker-compose logs todo-redis  # Check Redis logs
+  
             # Restart the application using PM2
             echo "🚀 Restarting application..."
             pm2 delete my-app || true  # Ensures no duplicate process

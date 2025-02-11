@@ -10,8 +10,10 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - todo-mongo
-      - todo-redis
+      todo-mongo:
+        condition: service_healthy
+      todo-redis:
+        condition: service_healthy  # ✅ Ensure Redis is ready before starting
     environment:
       - PORT=3000
       - MONGO_URI=${MONGO_URI}   
@@ -23,6 +25,7 @@ services:
       - .env  
     networks:
       - todo-network
+    restart: always  # Restart if crashed
 
   todo-mongo:
     image: mongo:6
@@ -31,6 +34,12 @@ services:
       - "27017:27017"
     networks:
       - todo-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   todo-redis:
     image: redis:alpine
@@ -39,3 +48,9 @@ services:
       - "6379:6379"
     networks:
       - todo-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
