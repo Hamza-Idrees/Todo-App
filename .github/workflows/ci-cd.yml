@@ -42,4 +42,4 @@ jobs:
         run: |
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@YOUR_EC2_PUBLIC_IP "cd /var/www/my-app && git pull && npm install && pm2 restart app"
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@13.60.44.85 "cd /var/www/my-app && git pull && npm install && pm2 restart app"
