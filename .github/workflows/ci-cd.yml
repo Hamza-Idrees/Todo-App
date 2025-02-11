@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key.pem
           chmod 600 private_key.pem
-
+          
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
@@ -69,15 +69,19 @@ jobs:
             git reset --hard
             git pull origin master  # Ensure this matches your default branch
 
-            # Upload .env file
-            echo "🔑 Setting up environment variables..."
-            echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
-            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
-            echo "TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}" >> .env
+            # ✅ Ensure .env file is created properly
+            echo "🔑 Creating .env file..."
+            cat <<EOT > .env
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            REDIS_URL=redis://todo-redis:6379
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}
+            EOT
 
-            # Install dependencies
-            echo "📦 Installing dependencies..."
-            npm install
+            # Build and run with Docker Compose
+            echo "🚀 Running Docker Compose..."
+            docker-compose down
+            docker-compose up --build -d
 
             # Restart the application using PM2
             echo "🚀 Restarting application..."
