@@ -30,7 +30,7 @@ jobs:
       - name: Build and Start Docker Compose
         run: |
           docker-compose up --build -d
-          sleep 10  # Corrected `wait(10)`
+          sleep 10  # Corrected wait(10)
           docker ps
 
       - name: Setup SSH Keys
@@ -76,7 +76,7 @@ jobs:
             REDIS_URL=redis://todo-redis:6379
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}
-            EOL
+            EOT
 
             # Build and run with Docker Compose
             echo "🚀 Running Docker Compose..."
