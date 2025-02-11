@@ -27,37 +27,28 @@ jobs:
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
           echo "TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}" >> .env
 
-      - name: Build Docker Containers
-        run: |
-          docker-compose up -d --build
-          sleep 10  # Wait for services to start
-          docker ps  # Check running containers
-
-      - name: Cleanup Docker Containers
-        run: docker-compose down
-
       - name: Deploy to EC2
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          GITHUB_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
-        run: | 
+           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+           GITHUB_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+        run: |
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           echo "$GITHUB_DEPLOY_KEY" > github_deploy_key.pem
           chmod 600 github_deploy_key.pem
-      
+        
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$EC2_PUBLIC_IP << 'EOF'
-            # Ensure correct SSH key exists for GitHub
+            set -e  # Fail fast if any command fails
+        
+            # Ensure correct SSH key for GitHub
             mkdir -p ~/.ssh
-            if [ ! -f "~/.ssh/id_rsa" ]; then
-              echo "Error: SSH key for GitHub is missing in EC2 instance!"
-              exit 1
-            fi
+            mv github_deploy_key.pem ~/.ssh/github_deploy_key.pem
+            chmod 600 ~/.ssh/github_deploy_key.pem
             eval "$(ssh-agent -s)"
-            ssh-add ~/.ssh/id_rsa
-            echo "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-      
+            ssh-add ~/.ssh/github_deploy_key.pem
+            echo "Host github.com\n\tIdentityFile ~/.ssh/github_deploy_key.pem\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+        
             # Ensure Node.js & PM2 are installed
             if ! command -v node &> /dev/null; then
               curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -66,12 +57,12 @@ jobs:
             if ! command -v pm2 &> /dev/null; then
               npm install -g pm2
             fi
-      
+        
             # Ensure project directory exists & correct ownership
             sudo mkdir -p /home/ubuntu/my-app
             sudo chown -R ubuntu:ubuntu /home/ubuntu/my-app
-      
-            # Clone or pull the latest code from GitHub
+        
+            # Clone or pull latest code
             cd /home/ubuntu/my-app
             if [ -d ".git" ]; then
               echo "Repository exists, pulling latest changes..."
@@ -79,19 +70,20 @@ jobs:
               git pull origin main
             else
               echo "Repository does not exist, cloning..."
-              rm -rf /home/ubuntu/my-app
+              sudo rm -rf /home/ubuntu/my-app
               git clone git@github.com:Hamza-Idrees/Todo-App.git /home/ubuntu/my-app
               cd /home/ubuntu/my-app
             fi
-      
+        
             # Ensure package.json exists before running npm install
             if [ ! -f "package.json" ]; then
               echo "Error: package.json not found! Aborting deployment."
               exit 1
             fi
-      
+        
             # Install dependencies & restart app
             npm install
             pm2 restart app || pm2 start index.js --name app
           EOF
+        
       
