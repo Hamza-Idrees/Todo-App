@@ -41,7 +41,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           GITHUB_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
-        run: |
+        run: | 
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           echo "$GITHUB_DEPLOY_KEY" > github_deploy_key.pem
