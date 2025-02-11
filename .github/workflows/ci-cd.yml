@@ -27,46 +27,59 @@ jobs:
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
           echo "TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}" >> .env
 
+      - name: Build and Start Docker Compose
+        run: |
+          docker-compose up --build -d
+          sleep 10  # Corrected `wait(10)`
+          docker ps
+
       - name: Setup SSH Keys
         run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key.pem
           chmod 600 private_key.pem
-        
+
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            # Ensure the project directory exists
+            echo "🚀 Connecting to EC2..."
+            
+            # Ensure project directory exists
             if [ ! -d "/home/ubuntu/my-app" ]; then
-              echo "Repository does not exist. Cloning..."
-              git clone git@github.com:Hamza-Idrees/Todo-App.git /home/ubuntu/my-app
+              echo "📂 Cloning repository..."
+              git clone https://github.com/Hamza-Idrees/Todo-App.git /home/ubuntu/my-app
             fi
-        
+
             # Navigate to project directory
             cd /home/ubuntu/my-app
-        
+
             # Ensure Node.js & PM2 are installed
             if ! command -v node &> /dev/null; then
-              echo "Installing Node.js..."
+              echo "📦 Installing Node.js..."
               curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
               sudo apt-get install -y nodejs
             fi
-        
+
             if ! command -v pm2 &> /dev/null; then
-              echo "Installing PM2..."
+              echo "📦 Installing PM2..."
               npm install -g pm2
             fi
-        
-            # Git pull latest changes
-            echo "Pulling latest changes..."
+
+            # Pull latest code
+            echo "🔄 Pulling latest changes..."
             git reset --hard
-            git pull origin main
-        
+            git pull origin master  # Ensure this matches your default branch
+
+            # Upload .env file
+            echo "🔑 Setting up environment variables..."
+            echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
+            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+            echo "TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}" >> .env
+
             # Install dependencies
-            echo "Installing dependencies..."
+            echo "📦 Installing dependencies..."
             npm install
-        
+
             # Restart the application using PM2
-            echo "Restarting application..."
+            echo "🚀 Restarting application..."
             pm2 restart my-app || pm2 start index.js --name my-app
           EOF
-         
