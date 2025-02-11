@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key.pem
           chmod 600 private_key.pem
-          
+
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
@@ -76,7 +76,7 @@ jobs:
             REDIS_URL=redis://todo-redis:6379
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             TOKEN_EXPIRATION=${{ secrets.TOKEN_EXPIRATION }}
-            EOT
+            EOL
 
             # Build and run with Docker Compose
             echo "🚀 Running Docker Compose..."
@@ -85,5 +85,6 @@ jobs:
 
             # Restart the application using PM2
             echo "🚀 Restarting application..."
-            pm2 restart my-app || pm2 start index.js --name my-app
+            pm2 delete my-app || true  # Ensures no duplicate process
+            pm2 start index.js --name my-app
           EOF
