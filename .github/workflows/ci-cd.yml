@@ -50,6 +50,6 @@ jobs:
                 git pull origin main
               fi
               npm install
-              pm2 restart app
+              pm2 restart appgit 
             EOF
         
