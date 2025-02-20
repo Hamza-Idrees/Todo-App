@@ -97,7 +97,6 @@ module.exports = {
     try {
       const { params, body, user } = req;
 
-      console.log(body);
       if (!params?.id || typeof params?.id !== TodoConstant?.string) {
         return res.status(Response?.statusCode?.badRequest).json({
           error: Response?.message?.badRequest,
