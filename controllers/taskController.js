@@ -100,43 +100,43 @@ module.exports = {
       if (!params?.id || typeof params?.id !== TodoConstant?.string) {
         return res.status(Response?.statusCode?.badRequest).json({
           error: Response?.message?.badRequest,
-          message: UserConstant.invalidId,
+          message: UserConstant?.invalidId,
         });
       }
 
-      if (body?.name !== undefined && typeof body?.name !== TodoConstant.string) {
+      if (body?.name !== undefined && typeof body?.name !== TodoConstant?.string) {
         return res.status(Response?.statusCode?.badRequest).json({
           error: Response?.message?.badRequest,
-          message: UserConstant.invalidName,
+          message: UserConstant?.invalidName,
         });
       }
 
-      if (body?.desc !== undefined && typeof body?.desc !== TodoConstant.string) {
+      if (body?.desc !== undefined && typeof body?.desc !== TodoConstant?.string) {
         return res.status(Response?.statusCode?.badRequest).json({
           error: Response?.message?.badRequest,
-          message: UserConstant.invalidDescription,
+          message: UserConstant?.invalidDescription,
         });
       }
 
-      if (body?.date !== undefined && typeof body?.date !== TodoConstant.string) {
+      if (body?.date !== undefined && typeof body?.date !== TodoConstant?.string) {
         return res.status(Response?.statusCode?.badRequest).json({
           error: Response?.message?.badRequest,
-          message: UserConstant.invalidDate,
+          message: UserConstant?.invalidDate,
         });
       }
 
       if (body?.status !== undefined) {
-        if (typeof body?.status !== TodoConstant.boolean) {
+        if (typeof body?.status !== TodoConstant?.boolean) {
           return res.status(Response?.statusCode?.badRequest).json({
             error: Response?.message?.badRequest,
-            message: UserConstant.invalidStatus,
+            message: UserConstant?.invalidStatus,
           });
         }
 
         if (user?.role !== UserConstant?.role) {
           return res.status(Response?.statusCode?.forbidden).json({
             error: Response?.message?.forbidden,
-            message: UserConstant.message,
+            message: UserConstant?.message,
           });
         }
       }
@@ -145,7 +145,7 @@ module.exports = {
 
       if (!taskFind) {
         return res.status(Response?.statusCode?.notFound)
-        .json(Response?.message?.notFound);
+          .json(Response?.message?.notFound);
       }
 
       if (body?.name !== undefined) taskFind.taskName = body?.name;
@@ -168,7 +168,7 @@ module.exports = {
 
     } catch (err) {
       return res.status(Response?.statusCode?.internalServerError)
-      .json(Response?.message?.internalServerError);
+        .json(Response?.message?.internalServerError);
     }
   },
 
