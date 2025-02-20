@@ -131,13 +131,13 @@ module.exports = {
 
       if (taskFind) {
         if (body?.name)
-          taskFind?.taskName = name;
+          taskFind?.taskName = body?.name;
         if (body?.desc)
-          taskFind?.taskDescription = desc;
-        if (user?.role === "admin" && status !== undefined)
-          taskFind?.status = status;
+          taskFind?.taskDescription = body?.desc;
+        if (user?.role === "admin" && body?.status !== undefined)
+          taskFind?.status = body?.status;
         if (body?.date)
-          taskFind?.date = date;
+          taskFind?.date = body?.date;
         await taskFind.save();
 
         const taskCacheKey = `task:${params?.id}`;
@@ -179,15 +179,15 @@ module.exports = {
 
       if (taskFind) {
         if (body?.name !== undefined)
-          taskFind?.taskName = name;
+          taskFind?.taskName = body?.name;
         if (body?.desc !== undefined)
-          taskFind?.taskDescription = desc;
+          taskFind?.taskDescription = body?.desc;
         if (body?.date !== undefined)
-          taskFind?.date = date;
+          taskFind?.date = body?.date;
 
         await taskFind.save();
-        return res.status(Response.statusCode.SUCCESS).send({
-          message: Response.message.SUCCESS,
+        return res.status(Response?.statusCode?.SUCCESS).send({
+          message: Response?.message?.SUCCESS,
           task: taskFind,
         });
       }
