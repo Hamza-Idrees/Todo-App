@@ -14,11 +14,10 @@ const authenticate = (req, res, next) => {
   }
 
   const decoded = verifyToken(token, SECRET_KEY);
-  console.log(decoded);
 
   if (decoded.error) {
     // If the error is related to token expiration or invalidity
-    return res.status(statusCode.UNAUTHORIZED).json({ error: decoded.error });
+    return res.status(statusCode.unauthorized).json({ error: decoded.error });
   }
 
   req.user = decoded;
