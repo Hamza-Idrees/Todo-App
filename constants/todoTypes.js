@@ -1,5 +1,5 @@
 module.exports = {
-    String: 'string',
-    Boolean: 'boolean'
+    string: 'string',
+    boolean: 'boolean'
 
 }

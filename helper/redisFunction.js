@@ -4,15 +4,9 @@ redisClient.flushAll();
 
 module.exports = {
 
-  saveDataInCache : async (key, value) => {
-    redisClient.set(key, JSON.stringify(value));
-  },
+  saveDataInCache : async (key, value) => redisClient.set(key, JSON?.stringify(value)),
 
-  getDataFromCache : async (key) => {
-    return redisClient.get(key);
-  },
+  getDataFromCache : async (key) => redisClient.get(key),
 
-  deleteDataFromCache : async (key) => {
-    redisClient.del(key);
-  },
+  deleteDataFromCache : async (key) => redisClient.del(key),
 }

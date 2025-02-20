@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const todoController = require("../controllers/todoController");
+const todoController = require("../controllers/taskController");
 const authenticate = require("../middleware/tokenValidator");
 const roleAdmin = require("../middleware/roleValidator");
 
@@ -223,9 +223,13 @@ const roleAdmin = require("../middleware/roleValidator");
  *     scheme: bearer
  *     bearerFormat: JWT
  */
-router.post("/task", authenticate, todoController.createTask);
-router.get("/tasks", authenticate, todoController.getAllTasks);
-router.get("/task/:id", authenticate, todoController.getTaskById);
+router.post("/task", authenticate, todoController.create);
+router.get("/tasks", authenticate, todoController.getAll);
+router.get("/task/:id", authenticate, todoController.get);
+router.patch("/task/:id", authenticate, todoController.update);
+router.delete("/task/:id", authenticate, todoController.delete);
+
+/*
 router.put("/task/:id", authenticate, todoController.updateTask);
 router.patch(
   "/tasks/:id",
@@ -239,6 +243,6 @@ router.patch(
   roleAdmin,
   todoController.updateStatus,
 );
-router.delete("/task/:id", authenticate, todoController.deleteTask);
+*/
 
 module.exports = router;
