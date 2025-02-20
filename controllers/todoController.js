@@ -1,263 +1,261 @@
 const Todo = require("../model/todoSchema");
-const { statusCode, message } = require("../constants/statusCodes");
-const {
-  saveDataInCache,
-  getDataFromCache,
-  deleteDataFromCache,
-} = require("../helper/redisFunction");
+const Response = require("../constants/statusCodes");
+const TodoConstant = require("../constants/todoTypes");
+const Redis = require('../helper/redisFunction');
 require("dotenv").config();
 
-exports.createTask = async (req, res) => {
-  try {
-    const { name, desc, date } = req.body;
+module.exports = {
+  createTask : async (req, res) => {
+    try {
+      const { body, user } = req;
 
-    const user = req.user;
+      if (!body?.name || typeof body?.name !== TodoConstant?.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
 
-    if (!name || typeof name !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
+      if (!body?.desc || typeof body?.desc !== TodoConstant?.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
 
-    if (!desc || typeof desc !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
+      if (!body?.date || typeof body?.date !== TodoConstant?.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
 
-    if (!date || typeof date !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    const todo = await Todo.create({
-      taskName: name,
-      taskDescription: desc,
-      date: date,
-      userId: user.userId,
-    });
-
-    return res.status(statusCode.CREATED).send({
-      message: message.CREATED,
-      task: todo,
-    });
-  } catch (err) {
-    return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
-  }
-};
-
-exports.getAllTasks = async (req, res) => {
-  try {
-    const user = req.user;
-    const key = `key:${user.userId}`;
-    const cachedData = await getDataFromCache(key);
-    if (cachedData) {
-      console.log("cache hit");
-      return res
-        .status(statusCode.SUCCESS)
-        .json({ message: JSON.parse(cachedData) });
-    }
-    const todo = await Todo.find({ userId: user.userId });
-
-    const value = todo;
-    saveDataInCache(key, value);
-    console.log("cache miss");
-
-    return res.status(statusCode.SUCCESS).json(todo);
-  } catch (err) {
-    return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
-  }
-};
-
-exports.getTaskById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const user = req.user;
-    const key = `key:${id}`;
-    if (!id || typeof id !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    const cachedData = await getDataFromCache(key);
-    if (cachedData) {
-      console.log("cache hit");
-      return res
-        .status(statusCode.SUCCESS)
-        .json({ message: JSON.parse(cachedData) });
-    }
-
-    const taskFind = await Todo.findOne({ _id: id, userId: user.userId });
-    if (taskFind) {
-      const value = taskFind;
-      saveDataInCache(key, value);
-      console.log("cache miss");
-      return res.status(statusCode.SUCCESS).json({
-        task: taskFind,
-        role: user.role,
-      });
-    } else {
-      return res.status(statusCode.NOT_FOUND).json(message.NOT_FOUND);
-    }
-  } catch (err) {
-    return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
-  }
-};
-
-exports.updateTask = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, desc, status, date } = req.body;
-    const user = req.user;
-
-    if (!id || typeof id !== "string")
-      return res.status(statusCode.BAD_REQUEST).send({
-        error: message.BAD_REQUEST,
-        message: "Invalid Id",
+      const todo = await Todo.create({
+        taskName: body?.name,
+        taskDescription: body?.desc,
+        date: body?.date,
+        userId: user?.userId,
       });
 
-    if (!name || typeof name !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
+      return res.status(Response?.statusCode?.CREATED).send({
+        message: Response?.message?.CREATED,
+        task: todo,
+      });
+    } catch (err) {
+      return res
+        .status(Response?.statusCode?.INTERNAL_SERVER_ERROR)
+        .send(err?.Response?.message?.INTERNAL_SERVER_ERROR);
+    }
+  },
 
-    if (!desc || typeof desc !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    if (!date || typeof date !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    if (status !== undefined) {
-      if (typeof status !== "boolean") {
-        return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
+  getAllTasks : async (req, res) => {
+    try {
+      const { user } = req;
+      const key = `key:${user?.userId}`;
+      const cachedData = await Redis.getDataFromCache(key);
+      if (cachedData) {
+        console.log("cache hit");
+        return res
+          .status(Response?.statusCode?.SUCCESS)
+          .json({ message: JSON?.parse(cachedData) });
       }
-      if (user.role !== "admin") {
-        return res.status(statusCode.FORBIDDEN).send({
-          error: message.FORBIDDEN,
-          message: "Only admin can update the status field.",
+      const todo = await Todo.find({ userId: user?.userId });
+
+      const value = todo;
+      Redis.saveDataInCache(key, value);
+      console.log("cache miss");
+
+      return res.status(Response?.statusCode?.SUCCESS).json(todo);
+    } catch (err) {
+      return res
+        .status(Response?.statusCode?.INTERNAL_SERVER_ERROR)
+        .send(err?.Response?.message?.INTERNAL_SERVER_ERROR);
+    }
+  },
+
+  getTaskById : async (req, res) => {
+    try {
+      const { params, user } = req;
+
+      const key = `key:${params?.id}`;
+      if (!params?.id || typeof params?.id !== TodoConstant?.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      const cachedData = await Redis.getDataFromCache(key);
+      if (cachedData) {
+        console.log("cache hit");
+        return res
+          .status(Response?.statusCode?.SUCCESS)
+          .json({ message: JSON?.parse(cachedData) });
+      }
+
+      const taskFind = await Todo.findOne({ _id: params?.id, userId: user?.userId });
+      if (taskFind) {
+        const value = taskFind;
+        Redis.saveDataInCache(key, value);
+        console.log("cache miss");
+        return res.status(Response?.statusCode?.SUCCESS).json({
+          task: taskFind,
+          role: user?.role,
+        });
+      } else {
+        return res.status(Response?.statusCode?.NOT_FOUND).json(Response?.message?.NOT_FOUND);
+      }
+    } catch (err) {
+      return res
+        .status(Response?.statusCode?.INTERNAL_SERVER_ERROR)
+        .send(err?.Response?.message?.INTERNAL_SERVER_ERROR);
+    }
+  },
+
+  updateTask : async (req, res) => {
+    try {
+      const { params, body, user } = req;
+
+      if (!params?.id || typeof params?.id !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send({
+          error: Response?.message?.BAD_REQUEST,
+          message: "Invalid Id",
+        });
+
+      if (!body?.name || typeof body?.name !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      if (!body?.desc || typeof body?.desc !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      if (!body?.date || typeof body?.date !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      if (body?.status !== undefined) {
+        if (typeof body?.status !== TodoConstant.Boolean) {
+          return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+        }
+        if (user?.role !== "admin") {
+          return res.status(Response?.statusCode?.FORBIDDEN).send({
+            error: Response?.message.FORBIDDEN,
+            message: "Only admin can update the status field.",
+          });
+        }
+      }
+
+      const taskFind = await Todo.findOne({ _id: params?.id, userId: user?.userId });
+
+      if (taskFind) {
+        if (body?.name)
+          taskFind?.taskName = name;
+        if (body?.desc)
+          taskFind?.taskDescription = desc;
+        if (user?.role === "admin" && status !== undefined)
+          taskFind?.status = status;
+        if (body?.date)
+          taskFind?.date = date;
+        await taskFind.save();
+
+        const taskCacheKey = `task:${params?.id}`;
+        await Redis.saveDataInCache(taskCacheKey, taskFind);
+
+        await Redis.deleteDataFromCache(`tasks:${user?.userId}`);
+
+        return res.status(Response?.statusCode?.SUCCESS).send({
+          message: Response?.message?.SUCCESS,
+          task: taskFind,
+        });
+      } else {
+        return res.status(Response?.statusCode?.NOT_FOUND).json(Response?.message?.NOT_FOUND);
+      }
+    } catch (err) {
+      return res
+        .status(Response?.statusCode?.INTERNAL_SERVER_ERROR)
+        .send(err?.Response?.message?.INTERNAL_SERVER_ERROR);
+    }
+  },
+
+  updateSpecificField : async (req, res) => {
+    try {
+      const { user, params, body } = req;
+
+      if (!params?.id || typeof params?.id !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      if (body?.name !== undefined && typeof body?.name !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      if (body?.desc !== undefined && typeof body?.desc !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      if (body?.date !== undefined && typeof body?.date !== TodoConstant.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      const taskFind = await Todo.findOne({ _id: params?.id, userId: user?.userId });
+
+      if (taskFind) {
+        if (body?.name !== undefined)
+          taskFind?.taskName = name;
+        if (body?.desc !== undefined)
+          taskFind?.taskDescription = desc;
+        if (body?.date !== undefined)
+          taskFind?.date = date;
+
+        await taskFind.save();
+        return res.status(Response.statusCode.SUCCESS).send({
+          message: Response.message.SUCCESS,
+          task: taskFind,
         });
       }
+    } catch (err) {
+      return res
+        .status(Response?.statusCode?.INTERNAL_SERVER_ERROR)
+        .send(err?.Response?.message?.INTERNAL_SERVER_ERROR);
     }
+  },
 
-    const taskFind = await Todo.findOne({ _id: id, userId: user.userId });
+  updateStatus : async (req, res) => {
+    try {
+      const { params, body } = req;
 
-    if (taskFind) {
-      if (name) taskFind.taskName = name;
-      if (desc) taskFind.taskDescription = desc;
-      if (user.role === "admin" && status !== undefined)
-        taskFind.status = status;
-      if (date) taskFind.date = date;
-      await taskFind.save();
+      if (!params?.id || typeof params?.id !== TodoConstant?.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
 
-      const taskCacheKey = `task:${id}`;
-      await saveDataInCache(taskCacheKey, taskFind);
+      if (typeof body?.status !== TodoConstant?.Boolean)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
 
-      await deleteDataFromCache(`tasks:${user.userId}`);
+      const statusUpdate = await Todo.findByIdAndUpdate(
+        params?.id,
+        { status: body?.status },
+        { new: true },
+      );
 
-      return res.status(statusCode.SUCCESS).send({
-        message: message.SUCCESS,
-        task: taskFind,
-      });
-    } else {
-      return res.status(statusCode.NOT_FOUND).json(message.NOT_FOUND);
+      if (statusUpdate) {
+        return res.status(Response?.statusCode?.SUCCESS).json({
+          message: Response?.message?.SUCCESS,
+          status: body?.status,
+          task: statusUpdate,
+        });
+      } else {
+        return res.status(Response?.statusCode?.NOT_FOUND).json(Response?.message?.NOT_FOUND);
+      }
+    } catch (err) {
+      return res
+        .status(Response?.statusCode?.INTERNAL_SERVER_ERROR)
+        .send(err?.Response?.message?.INTERNAL_SERVER_ERROR);
     }
-  } catch (err) {
-    return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
+  },
+
+  deleteTask : async (req, res) => {
+    try {
+      const { params, user } = req;
+
+      if (!params?.id || typeof params?.id !== TodoConstant?.String)
+        return res.status(Response?.statusCode?.BAD_REQUEST).send(Response?.message?.BAD_REQUEST);
+
+      const key = `key:${params?.id}`;
+
+      const taskFind = await Todo.findOne({ _id: params?.id, userId: user?.userId });
+
+      if (taskFind) {
+        await taskFind.deleteOne();
+        await Redis.deleteDataFromCache(key);
+        console.log("cache hit");
+        return res.status(Response?.statusCode?.DELETED).send({
+          message: Response?.message?.DELETED,
+          task: taskFind,
+        });
+      } else {
+        return res.status(Response?.statusCode?.NOT_FOUND).json(Response?.message?.NOT_FOUND);
+      }
+    } catch (err) {
+      return res
+        .status(Response?.statusCode?.INTERNAL_SERVER_ERROR)
+        .send(err?.Response?.message?.INTERNAL_SERVER_ERROR);
+    }
   }
-};
-
-exports.updateSpecificField = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, desc, status, date } = req.body;
-    const user = req.user;
-
-    if (!id || typeof id !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    if (name !== undefined && typeof name !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    if (desc !== undefined && typeof desc !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    if (date !== undefined && typeof date !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    const taskFind = await Todo.findOne({ _id: id, userId: user.userId });
-
-    if (taskFind) {
-      if (name !== undefined) taskFind.taskName = name;
-      if (desc !== undefined) taskFind.taskDescription = desc;
-      if (date !== undefined) taskFind.date = date;
-      await taskFind.save();
-      return res.status(statusCode.SUCCESS).send({
-        message: message.SUCCESS,
-        task: taskFind,
-      });
-    }
-  } catch (err) {
-    return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
-  }
-};
-
-exports.updateStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    if (!id || typeof id !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    if (typeof status !== "boolean")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    const statusUpdate = await Todo.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true },
-    );
-
-    if (statusUpdate) {
-      return res.status(statusCode.SUCCESS).json({
-        message: message.SUCCESS,
-        status,
-        task: statusUpdate,
-      });
-    } else {
-      return res.status(statusCode.NOT_FOUND).json(message.NOT_FOUND);
-    }
-  } catch (err) {
-    return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
-  }
-};
-
-exports.deleteTask = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = req.user;
-
-    if (!id || typeof id !== "string")
-      return res.status(statusCode.BAD_REQUEST).send(message.BAD_REQUEST);
-
-    const key = `key:${id}`;
-
-    const taskFind = await Todo.findOne({ _id: id, userId: user.userId });
-
-    if (taskFind) {
-      await taskFind.deleteOne();
-      await deleteDataFromCache(key);
-      console.log("cache hit");
-      return res.status(statusCode.DELETED).send({
-        message: message.DELETED,
-        task: taskFind,
-      });
-    } else {
-      return res.status(statusCode.NOT_FOUND).json(message.NOT_FOUND);
-    }
-  } catch (err) {
-    return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
-  }
-};
+}
