@@ -20,21 +20,21 @@ exports.createUser = async (req, res) => {
     const image = req.files;
 
     if (!username || typeof username !== "string")
-      return res.status(statusCode.BAD_REQUEST).send({
+      return res.status(statusCode.badRequest).send({
         message: "Invalid username",
-        error: message.BAD_REQUEST,
+        error: message.badRequest,
       });
 
     if (!pass || typeof pass !== "string")
-      return res.status(statusCode.BAD_REQUEST).send({
+      return res.status(statusCode.badRequest).send({
         message: "Invalid password",
-        error: message.BAD_REQUEST,
+        error: message.badRequest,
       });
 
     if (!email || typeof email !== "string")
-      return res.status(statusCode.BAD_REQUEST).send({
+      return res.status(statusCode.badRequest).send({
         message: "Invalid email",
-        error: message.BAD_REQUEST,
+        error: message.badRequest,
       });
 
     const existingUser = await User.findOne({ username });
@@ -61,8 +61,8 @@ exports.createUser = async (req, res) => {
       email: email,
       images: imagePaths,
     });
-    return res.status(statusCode.CREATED).json({
-      message: message.CREATED,
+    return res.status(statusCode.created).json({
+      message: message.created,
       user: {
         id: newUser._id,
         username: newUser.username,
@@ -73,8 +73,8 @@ exports.createUser = async (req, res) => {
     });
   } catch (err) {
     return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
+      .status(statusCode.internalServerError)
+      .send(err.message.internalServerError);
   }
 };
 
@@ -84,34 +84,34 @@ exports.loginUser = async (req, res) => {
 
     if (!username || typeof username !== "string")
       return res
-        .status(statusCode.BAD_REQUEST)
-        .send({ message: "Invalid username", error: message.BAD_REQUEST });
+        .status(statusCode.badRequest)
+        .send({ message: "Invalid username", error: message.badRequest });
 
     if (!pass || typeof pass !== "string")
       return res
-        .status(statusCode.BAD_REQUEST)
-        .send({ message: "Invalid password", error: message.BAD_REQUEST });
+        .status(statusCode.badRequest)
+        .send({ message: "Invalid password", error: message.badRequest });
 
     if (!email || typeof email !== "string")
       return res
-        .status(statusCode.BAD_REQUEST)
-        .send({ message: "Invalid email", error: message.BAD_REQUEST });
+        .status(statusCode.badRequest)
+        .send({ message: "Invalid email", error: message.badRequest });
 
     const user = username
       ? await User.findOne({ username })
       : await User.findOne({ email });
 
     if (!user) {
-      return res.status(statusCode.NOT_FOUND).send({
-        message: message.NOT_FOUND,
+      return res.status(statusCode.notFound).send({
+        message: message.notFound,
       });
     }
 
     const validPass = await comparePassword(pass, user.password);
     if (!validPass) {
       return res
-        .status(statusCode.UNAUTHORIZED)
-        .send({ message: message.UNAUTHORIZED });
+        .status(statusCode.unauthorized)
+        .send({ message: message.unauthorized });
     }
 
     const token = generateToken(
@@ -120,15 +120,15 @@ exports.loginUser = async (req, res) => {
       TOKEN_EXPIRATION,
     );
 
-    return res.status(statusCode.SUCCESS).json({
-      message: message.SUCCESS,
+    return res.status(statusCode.success).json({
+      message: message.success,
       user,
       token,
     });
   } catch (err) {
     return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
-      .send(err.message.INTERNAL_SERVER_ERROR);
+      .status(statusCode.internalServerError)
+      .send(err.message.internalServerError);
   }
 };
 
@@ -139,7 +139,7 @@ exports.getUser = async (req, res) => {
 
     if (!user) {
       return res
-        .status(statusCode.NOT_FOUND)
+        .status(statusCode.notFound)
         .json({ error: "User not found." });
     }
 
@@ -151,7 +151,7 @@ exports.getUser = async (req, res) => {
     const cachedData = await getDataFromCache(key);
     if (cachedData) {
       console.log("cache hit");
-      return res.status(statusCode.SUCCESS).json({
+      return res.status(statusCode.success).json({
         message: `Welcome ${username} (${role})!`,
         user: {
           userId: user._id,
@@ -167,7 +167,7 @@ exports.getUser = async (req, res) => {
     console.log("cache miss");
     saveDataInCache(key, value);
 
-    return res.status(statusCode.SUCCESS).json({
+    return res.status(statusCode.success).json({
       message: `Welcome ${username} (${role})!`,
       user: {
         userId: user._id,
@@ -180,7 +180,7 @@ exports.getUser = async (req, res) => {
   } catch (err) {
     console.error(err);
     return res
-      .status(statusCode.INTERNAL_SERVER_ERROR)
+      .status(statusCode.internalServerError)
       .json({ error: "Server error." });
   }
 };
